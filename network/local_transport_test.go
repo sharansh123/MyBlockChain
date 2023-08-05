@@ -9,8 +9,8 @@ import (
 
 func TestConnect(t *testing.T){
 
-	tra := NewLocalTransport("A")
-	trb := NewLocalTransport("B")
+	tra := NewLocalTransport("A").(*LocalTransport)
+	trb := NewLocalTransport("B").(*LocalTransport)
 	tra.Connect(trb)
 	trb.Connect(tra)
 	assert.Equal(t,tra.peers[trb.addr], trb)
@@ -18,8 +18,8 @@ func TestConnect(t *testing.T){
 }
 
 func TestSend(t *testing.T){
-	tra := NewLocalTransport("A")
-	trb := NewLocalTransport("B")
+	tra := NewLocalTransport("A").(*LocalTransport)
+	trb := NewLocalTransport("B").(*LocalTransport)
 	tra.Connect(trb)
 	trb.Connect(tra)
 
