@@ -32,6 +32,14 @@ func (bc *Blockchain) AddBlock(b *Block) error{
 
 }
 
+func (bc *Blockchain) GetHeader(height uint32) (*Header, error){
+	if height > bc.Height(){
+		return nil, fmt.Errorf("Height Bigger than Blockchain's height")
+	}
+
+	return bc.headers[height], nil
+}
+
 
 func (bc *Blockchain) HasBlock(height uint32) bool{
 	return height <= bc.Height()
