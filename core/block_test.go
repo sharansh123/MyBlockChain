@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sharansh123/MyBlockChain/crypto"
+	"github.com/sharansh123/MyBlockChain/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,16 +18,22 @@ func RandomBlock(height uint32) *Block{
 		Height: height,
 	}
 
-	tx := Transaction{
-		Data: []byte("foo"),
-	}
-
-	return NewBlock(header, []Transaction{tx})
+	return NewBlock(header, []Transaction{})
 }
 
 func randomBlockWithSignature(t *testing.T, height uint32) *Block{
 	privKey := crypto.GeneratePrivateKey()
 	bc := RandomBlock(height)
+	assert.Nil(t, bc.Sign(privKey))
+
+	return bc
+}
+
+func randomBlockWithSignAndPrevHash(t *testing.T, height uint32, prevBLockHash types.Hash) *Block{
+	privKey := crypto.GeneratePrivateKey()
+	bc := RandomBlock(height)
+	bc.Header.PrevBlockHash = prevBLockHash
+	bc.Transactions = append(bc.Transactions, randomTxWithSignature())
 	assert.Nil(t, bc.Sign(privKey))
 
 	return bc
