@@ -66,16 +66,16 @@ func (b *Block) Sign(privKey crypto.PrivateKey) error{
 func (b *Block) Verify() error{
 
 	if b.Signature == nil {
-		return fmt.Errorf("No sig provided")
+		return fmt.Errorf("no sig provided")
 	}
 
 	if !b.Signature.Verify(b.Validator, b.Header.Bytes()){
-		return fmt.Errorf("Invaild Block. Signature Doesn't Match")
+		return fmt.Errorf("invaild Block. Signature Doesn't Match")
 	}
 
 	for _, v := range b.Transactions{
 		if err := v.Verify(); err != nil{
-			return fmt.Errorf("Invalid Transaction!")
+			return fmt.Errorf("invalid Transaction")
 		}
 	}
 

@@ -29,7 +29,7 @@ func (tx *Transaction) Verify() (error){
 		return fmt.Errorf("tx has no signature")
 	}
 	if !tx.Signature.Verify(tx.From, tx.Data){
-		return fmt.Errorf("Invalid Transaction")
+		return fmt.Errorf("invalid Transaction")
 	}
 	return nil
 }
