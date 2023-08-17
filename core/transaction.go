@@ -2,8 +2,8 @@ package core
 
 import (
 	"fmt"
-
 	"github.com/sharansh123/MyBlockChain/crypto"
+	"github.com/sharansh123/MyBlockChain/types"
 )
 
 
@@ -11,6 +11,14 @@ type Transaction struct{
 	Data []byte
 	From crypto.PublicKey
 	Signature *crypto.Signature
+	//cached version of tx hash
+	hash types.Hash
+}
+
+func NewTransaction(data []byte) *Transaction{
+	return &Transaction{
+		Data: data,
+	}
 }
 
 func (tx *Transaction) Sign(privKey crypto.PrivateKey) (error){
@@ -32,4 +40,11 @@ func (tx *Transaction) Verify() (error){
 		return fmt.Errorf("invalid Transaction")
 	}
 	return nil
+}
+
+func (tx *Transaction) Hash(h Hasher[*Transaction]) types.Hash{
+	if tx.hash.IsZero(){
+		tx.hash = h.Hash(tx)
+	}
+	return tx.hash
 }

@@ -4,3 +4,5 @@ build:
 run: build
 	./bin/myblockchain
 
+test:
+	go test ./...

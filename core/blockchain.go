@@ -1,12 +1,16 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 
 
 type Blockchain struct{
 	headers []*Header
 	store Storage
+	lock sync.RWMutex
 	validator Validator
 }
 
@@ -37,6 +41,8 @@ func (bc *Blockchain) GetHeader(height uint32) (*Header, error){
 		return nil, fmt.Errorf("Height Bigger than Blockchain's height")
 	}
 
+	bc.lock.RLock()
+	defer bc.lock.RUnlock()
 	return bc.headers[height], nil
 }
 
@@ -46,10 +52,14 @@ func (bc *Blockchain) HasBlock(height uint32) bool{
 }
 
 func (bc *Blockchain) Height() uint32{
+	bc.lock.RLock()
+	defer bc.lock.RUnlock()
 	return uint32(len(bc.headers) - 1)
 }
 
 func (bc *Blockchain) addBlockWithoutValidation(b *Block) error{
+	bc.lock.Lock()
+	defer bc.lock.Unlock()
 	bc.headers = append(bc.headers, b.Header)
 	return bc.store.Put(b)
 }

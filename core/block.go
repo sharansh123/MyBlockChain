@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
-
 	"github.com/sharansh123/MyBlockChain/crypto"
 	"github.com/sharansh123/MyBlockChain/types"
 )
