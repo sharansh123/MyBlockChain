@@ -8,6 +8,8 @@ import (
 	"github.com/sharansh123/MyBlockChain/crypto"
 )
 
+var defaultBlockTime = 5 * time.Second
+
 type ServerOpts struct{
 	Transports []Transport
 	PrivateKey *crypto.PrivateKey
@@ -26,6 +28,9 @@ type Server struct{
 
 
 func NewServer(opts ServerOpts) *Server{
+	if opts.BlockTime == time.Duration(0){
+		opts.BlockTime = defaultBlockTime
+	}
 	return &Server{
 		ServerOpts: opts,
 		memPool: NewTxPool(),
@@ -54,6 +59,8 @@ free:
 			if s.isValidator{
 			fmt.Println("Creating a new block!!")
 			s.CreateNewBlock()
+			} else {
+				fmt.Println("Hello from Node!!")
 			}
 		}
 	}
