@@ -13,6 +13,8 @@ type Transaction struct{
 	Signature *crypto.Signature
 	//cached version of tx hash
 	hash types.Hash
+	//firstSeen is the timestamp of first seen locally.
+	firstSeen int64
 }
 
 func NewTransaction(data []byte) *Transaction{
@@ -47,4 +49,21 @@ func (tx *Transaction) Hash(h Hasher[*Transaction]) types.Hash{
 		tx.hash = h.Hash(tx)
 	}
 	return tx.hash
+}
+
+func (tx *Transaction) GetFirstSeen() int64{
+	return tx.firstSeen
+}
+
+func(tx *Transaction) SetFirstSeen(t int64){
+	tx.firstSeen = t
+}
+
+func (tx *Transaction) Decode(dec Decoder[*Transaction]) error {
+	return dec.Decode(tx)
+}
+
+
+func (tx *Transaction) Encode(enc Encoder[*Transaction]) error {
+	return enc.Encode(tx)
 }
