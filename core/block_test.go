@@ -26,6 +26,9 @@ func randomBlockWithSignAndPrevHash(t *testing.T, height uint32, prevBLockHash t
 	bc := RandomBlock(height)
 	bc.Header.PrevBlockHash = prevBLockHash
 	bc.Transactions = append(bc.Transactions, randomTxWithSignature())
+	dataHash, err := CalculateDataHash(bc.Transactions)
+	assert.Nil(t, err)
+	bc.Header.DataHash = dataHash
 	assert.Nil(t, bc.Sign(privKey))
 
 	return bc
@@ -43,7 +46,9 @@ func TestSignBlock(t *testing.T){
 	b := RandomBlock(0)
 
 	privKey := crypto.GeneratePrivateKey()
-
+	dataHash, err := CalculateDataHash(b.Transactions)
+	assert.Nil(t,err)
+	b.DataHash = dataHash
 	assert.Nil(t, b.Sign(privKey))
 	assert.Nil(t, b.Verify())
 
