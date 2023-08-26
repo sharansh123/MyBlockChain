@@ -3,15 +3,20 @@ package network
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/sharansh123/MyBlockChain/core"
 	"github.com/sharansh123/MyBlockChain/crypto"
+	"github.com/sharansh123/MyBlockChain/types"
 )
 
 var defaultBlockTime = 5 * time.Second
 
 type ServerOpts struct{
+	ID 	string
+	Logger log.Logger
 	RPCDecodeFunc RPCDecodeFunc
 	RPCProcessor RPCProcessor
 	Transports []Transport
@@ -23,13 +28,14 @@ type ServerOpts struct{
 type Server struct{
 	ServerOpts
 	rpcCh chan RPC
+	chain *core.Blockchain
 	memPool *TxPool
 	quitCh chan struct{}
 	isValidator bool
 }
 
 
-func NewServer(opts ServerOpts) *Server{
+func NewServer(opts ServerOpts) (*Server, error){
 	
 	if opts.BlockTime == time.Duration(0){
 		opts.BlockTime = defaultBlockTime
@@ -39,9 +45,20 @@ func NewServer(opts ServerOpts) *Server{
 		opts.RPCDecodeFunc = DefaultPRCDecodeFunc
 	}
 
+	if opts.Logger == nil {
+		opts.Logger = log.NewLogfmtLogger(os.Stderr)
+		opts.Logger = log.With(opts.Logger, "ID", opts.ID)
+	}
+
+	chain, err := core.NewBlockChain(genesisBlock())
+	if err != nil{
+		return nil, err
+	}
+
 	s := &Server{
 		ServerOpts: opts,
 		memPool: NewTxPool(),
+		chain: chain,
 		rpcCh: make(chan RPC),
 		isValidator: opts.PrivateKey != nil,
 		quitCh: make(chan struct{}, 1),
@@ -50,36 +67,53 @@ func NewServer(opts ServerOpts) *Server{
 	if opts.RPCProcessor == nil {
 		s.RPCProcessor = s
 	}
-	return s
+
+	if s.isValidator {
+		go s.validatorLoop()
+	}
+
+	return s, nil
 }
 
 func (s *Server) CreateNewBlock() error {
+	currentHeader, err := s.chain.GetHeader(s.chain.Height())
+	if err != nil{
+		return err
+	}
+
+	block, err := core.NewBlockFromPrevHeader(currentHeader, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := block.Sign(*s.PrivateKey); err != nil{
+		return err
+	}
+
+	if err := s.chain.AddBlock(block); err != nil {
+		return err
+	}
+
+	s.Logger.Log("msg", "Successfully Added Block", "Hash", block.DataHash, "ChainLenght", s.chain.Height())
+
 	return nil
 }
 
 func (s *Server) Start(){
 	s.initTransports()
-	ticker := time.NewTicker(s.BlockTime)
 free:
 	for {
 		select{
 		case rpc := <-s.rpcCh:
 			msg , err := s.ServerOpts.RPCDecodeFunc(rpc)
 			if err != nil{
-				fmt.Errorf(err.Error())
+				s.Logger.Log("error", err)
 			}
 			if err:= s.RPCProcessor.ProcessMessage(msg); err != nil{
-				fmt.Errorf(err.Error())
+				s.Logger.Log("error", err)
 			}
 		case <-s.quitCh:
 			break free
-		case <- ticker.C:
-			if s.isValidator{
-			fmt.Println("Creating a new block!!")
-			s.CreateNewBlock()
-			} else {
-				fmt.Println("Hello from Node!!")
-			}
 		}
 	}
 }
@@ -123,11 +157,27 @@ func (s *Server) ProcessTransaction(tx *core.Transaction) error {
 
 	tx.SetFirstSeen(time.Now().UnixNano())
 
-	fmt.Println("HASH: " + tx.Hash(core.TxHasher{}).String())
+
+	s.Logger.Log(
+		"msg", "adding new tx to mempool",
+		"hash", tx.Hash(core.TxHasher{}),
+		"memPoolLength", s.memPool.Len(),
+	)
 	
 	go s.broadcastTx(tx)
 
 	return s.memPool.Add(tx)
+}
+
+func (s *Server) validatorLoop(){
+	ticker := time.NewTicker(s.BlockTime)
+
+	s.Logger.Log("msg", "Starting Validator Loop", "BlockTime", s.BlockTime)
+
+	for {
+		<- ticker.C
+		s.CreateNewBlock()
+	}
 }
 
 func (s *Server) initTransports() {
@@ -138,5 +188,15 @@ func (s *Server) initTransports() {
 			}
 		}(tr)
 	}
+}
+
+func genesisBlock() *core.Block {
+	header:= &core.Header{
+		Version: 1,
+		DataHash: types.Hash{},
+		Timestamp :time.Now().UnixNano(),
+		Height: 0,
+	}
+	return core.NewBlock(header, nil)
 }
 

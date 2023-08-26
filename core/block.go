@@ -2,9 +2,12 @@ package core
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"io"
+	"time"
+
 	"github.com/sharansh123/MyBlockChain/crypto"
 	"github.com/sharansh123/MyBlockChain/types"
 )
@@ -33,6 +36,22 @@ func NewBlock(h *Header, txx []Transaction) *Block{
 		Header: h,
 		Transactions: txx,
 	}
+}
+
+func NewBlockFromPrevHeader(prevHeader *Header, tx []Transaction) (*Block, error) {
+	dataHash, err := CalculateDataHash(tx)
+	if err != nil {
+		return nil,err
+	}
+	header := &Header{
+		Version: 1,
+		DataHash: dataHash,
+		PrevBlockHash: BlockHasher{}.Hash(prevHeader),
+		Timestamp: time.Now().UnixNano(),
+		Height: prevHeader.Height + 1,
+	}
+
+	return NewBlock(header, tx), nil
 }
 
 func (b *Block) Decode(r *io.Reader, dec Decoder[*Block]) error {
@@ -78,6 +97,14 @@ func (b *Block) Verify() error{
 		}
 	}
 
+	hash, err := CalculateDataHash(b.Transactions)
+	if err != nil {
+		return err
+	}
+	if hash != b.DataHash{
+		return fmt.Errorf("Data Hash Invalid.")
+	}
+
 	return nil
 }
 
@@ -86,4 +113,19 @@ func (h *Header) Bytes() []byte{
 	enc := gob.NewEncoder(buf)
 	enc.Encode(h)
 	return  buf.Bytes()
+}
+
+func CalculateDataHash(txx []Transaction) (types.Hash, error){
+
+	buf := &bytes.Buffer{}
+
+	for _, tx := range txx {
+		if err := tx.Encode(NewGobTxEncoder(buf)); err != nil{
+			return types.Hash{}, err
+		}
+	}
+
+	hash := sha256.Sum256(buf.Bytes())
+	return hash, nil
+
 }

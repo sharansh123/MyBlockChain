@@ -6,7 +6,6 @@ import (
 )
 
 
-
 type Blockchain struct{
 	headers []*Header
 	store Storage
