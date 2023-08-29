@@ -24,21 +24,25 @@ type Header struct{
 
 type Block struct{
 	*Header
-	Transactions []Transaction
+	Transactions []*Transaction
 	Validator 	crypto.PublicKey
 	Signature	*crypto.Signature
 	//Cached version of header hash
 	hash types.Hash
 }
 
-func NewBlock(h *Header, txx []Transaction) *Block{
+func NewBlock(h *Header, txx []*Transaction) *Block{
 	return &Block{
 		Header: h,
 		Transactions: txx,
 	}
 }
 
-func NewBlockFromPrevHeader(prevHeader *Header, tx []Transaction) (*Block, error) {
+func (b *Block) AddTransaction( tx *Transaction) {
+	b.Transactions = append(b.Transactions, tx)
+}
+
+func NewBlockFromPrevHeader(prevHeader *Header, tx []*Transaction) (*Block, error) {
 	dataHash, err := CalculateDataHash(tx)
 	if err != nil {
 		return nil,err
@@ -115,7 +119,7 @@ func (h *Header) Bytes() []byte{
 	return  buf.Bytes()
 }
 
-func CalculateDataHash(txx []Transaction) (types.Hash, error){
+func CalculateDataHash(txx []*Transaction) (types.Hash, error){
 
 	buf := &bytes.Buffer{}
 

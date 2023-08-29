@@ -18,7 +18,7 @@ func RandomBlock(height uint32) *Block{
 		Height: height,
 	}
 
-	return NewBlock(header, []Transaction{})
+	return NewBlock(header, []*Transaction{})
 }
 
 func randomBlockWithSignAndPrevHash(t *testing.T, height uint32, prevBLockHash types.Hash) *Block{
