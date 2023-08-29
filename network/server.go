@@ -50,7 +50,7 @@ func NewServer(opts ServerOpts) (*Server, error){
 		opts.Logger = log.With(opts.Logger, "ID", opts.ID)
 	}
 
-	chain, err := core.NewBlockChain(genesisBlock())
+	chain, err := core.NewBlockChain(opts.Logger , genesisBlock())
 	if err != nil{
 		return nil, err
 	}
@@ -81,7 +81,9 @@ func (s *Server) CreateNewBlock() error {
 		return err
 	}
 
-	block, err := core.NewBlockFromPrevHeader(currentHeader, nil)
+	txx := s.memPool.Transactions()
+
+	block, err := core.NewBlockFromPrevHeader(currentHeader, txx)
 	if err != nil {
 		return err
 	}
@@ -93,6 +95,8 @@ func (s *Server) CreateNewBlock() error {
 	if err := s.chain.AddBlock(block); err != nil {
 		return err
 	}
+
+	s.memPool.Flush()
 
 	s.Logger.Log("msg", "Successfully Added Block", "Hash", block.DataHash, "ChainLenght", s.chain.Height())
 
@@ -169,6 +173,10 @@ func (s *Server) ProcessTransaction(tx *core.Transaction) error {
 	return s.memPool.Add(tx)
 }
 
+func (s *Server) broadcastBlock(b *core.Block) error {
+	return nil	
+}
+
 func (s *Server) validatorLoop(){
 	ticker := time.NewTicker(s.BlockTime)
 
@@ -194,7 +202,7 @@ func genesisBlock() *core.Block {
 	header:= &core.Header{
 		Version: 1,
 		DataHash: types.Hash{},
-		Timestamp :time.Now().UnixNano(),
+		Timestamp : 000000,
 		Height: 0,
 	}
 	return core.NewBlock(header, nil)
