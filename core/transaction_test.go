@@ -36,13 +36,13 @@ func TestVerifyTx(t *testing.T){
 }
 
 
-func randomTxWithSignature() Transaction{
+func randomTxWithSignature() *Transaction{
 	privKey := crypto.GeneratePrivateKey()
 	tx := &Transaction{
 		Data: []byte("foo"),
 	}
 	tx.Sign(privKey)
-	return *tx
+	return tx
 }
 
 
