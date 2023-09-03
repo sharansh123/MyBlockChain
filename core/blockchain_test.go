@@ -1,14 +1,16 @@
 package core
 
 import (
+	"os"
 	"testing"
 
+	"github.com/go-kit/log"
 	"github.com/sharansh123/MyBlockChain/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func newBlockChain(t *testing.T) *Blockchain{
-	bc, err := NewBlockChain(RandomBlock(0))
+	bc, err := NewBlockChain(log.NewLogfmtLogger(os.Stderr) , RandomBlock(0))
 	assert.Nil(t, err)
 	assert.NotNil(t,bc.validator)
 	return bc
