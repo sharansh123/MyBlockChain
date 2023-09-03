@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"time"
-
 	"github.com/go-kit/log"
 	"github.com/sharansh123/MyBlockChain/core"
 	"github.com/sharansh123/MyBlockChain/crypto"
@@ -100,6 +99,8 @@ func (s *Server) CreateNewBlock() error {
 
 	s.Logger.Log("msg", "Successfully Added Block", "Hash", block.DataHash, "ChainLenght", s.chain.Height())
 
+	go s.broadcastBlock(block)
+
 	return nil
 }
 
@@ -144,8 +145,18 @@ func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 	switch t := msg.Data.(type) {
 	case *core.Transaction:
 		return s.ProcessTransaction(t)
+	case *core.Block:
+		return s.ProcessBlock(t)
 	}
 	return nil
+}
+
+func (s *Server) ProcessBlock(b *core.Block) error {
+	if err:= s.chain.AddBlock(b); err != nil{
+		return err;
+	}
+	go s.broadcastBlock(b)
+	return nil;
 }
 
 func (s *Server) ProcessTransaction(tx *core.Transaction) error {
@@ -174,7 +185,13 @@ func (s *Server) ProcessTransaction(tx *core.Transaction) error {
 }
 
 func (s *Server) broadcastBlock(b *core.Block) error {
-	return nil	
+	buf := &bytes.Buffer{}
+	if err := b.Encode(core.NewGobBlockEncoder(buf)); err != nil{
+		return err
+	}
+	msg := NewMessage(MessageTypeBlock, buf.Bytes())
+
+	return s.broadcast(msg.Bytes())	
 }
 
 func (s *Server) validatorLoop(){
