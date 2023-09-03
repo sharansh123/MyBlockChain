@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 	"time"
@@ -57,4 +58,20 @@ func TestSignBlock(t *testing.T){
 
 	assert.NotNil(t, b.Verify())
 
+}
+
+
+func TestDecodeEncode(t *testing.T){
+
+	b := randomBlockWithSignAndPrevHash(t, 10, types.Hash{})
+	buf := &bytes.Buffer{}
+	enc := NewGobBlockEncoder(buf)
+	assert.Nil(t, enc.Encode(b))
+
+	dec := NewGobBlockDecoder(buf)
+
+	decodeBlock := &Block{}
+	assert.Nil(t, dec.Decode(decodeBlock))
+
+	assert.Equal(t, b, decodeBlock)
 }
