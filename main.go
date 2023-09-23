@@ -4,10 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"math/rand"
-	"strconv"
 	"time"
-
 	"github.com/sharansh123/MyBlockChain/core"
 	"github.com/sharansh123/MyBlockChain/crypto"
 	"github.com/sharansh123/MyBlockChain/network"
@@ -68,7 +65,7 @@ func makeServer(id string, tr network.Transport, privKey *crypto.PrivateKey) *ne
 
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
-	data := []byte(strconv.FormatInt(int64(rand.Intn(10000000)), 10))
+	data := []byte{0x1, 0xa, 0x2, 0xa, 0xb}
 	tx := core.NewTransaction(data)
 	tx.Sign(privKey)
 	buf := &bytes.Buffer{}
